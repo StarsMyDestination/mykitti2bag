@@ -9,6 +9,7 @@ import numpy as np
 
 # import pykitti.utils as utils
 from pykitti import utils
+from pykitti import tracklet as Tracklet
 
 __author__ = "Lee Clement"
 __email__ = "lee.clement@robotics.utias.utoronto.ca"
@@ -186,7 +187,7 @@ class raw:
         p_velo3 = np.linalg.inv(data['T_cam3_velo']).dot(p_cam)
 
         data['b_gray'] = np.linalg.norm(p_velo1 - p_velo0)  # gray baseline
-        data['b_rgb'] = np.linalg.norm(p_velo3 - p_velo2)   # rgb baseline
+        data['b_rgb'] = np.linalg.norm(p_velo3 - p_velo2)  # rgb baseline
 
         return data
 
@@ -229,3 +230,42 @@ class raw:
         # Subselect the chosen range of frames, if any
         if self.frames is not None:
             self.timestamps = [self.timestamps[i] for i in self.frames]
+
+    def parseTrackletXml(self):
+        objs_frame_wise = {}
+        ObjTuple = namedtuple('obj', 'id, type, bbox, location, orientation, frameNum')
+        xml_path = os.path.join(self.data_path, 'tracklet_labels.xml')
+        if os.path.isfile(xml_path):
+            tracklets = Tracklet.parseXML(xml_path)
+            for id, tracklet in enumerate(tracklets):
+                print ('tracklet {0: 3d}: {1}'.format(id, tracklet))
+                # this part is inspired by kitti object development kit matlab code: computeBox3D
+                h, w, l = tracklet.size
+                # in velodyne coordinates around zero point and without orientation yet\
+                bbox = np.array([[l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2],
+                                 [w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2],
+                                 [0.0, 0.0, 0.0, 0.0, h, h, h, h]])
+                for translation, rotation, state, occlusion, truncation, amtOcclusion, amtBorders, absoluteFrameNumber in tracklet:
+                    if truncation not in (Tracklet.TRUNC_IN_IMAGE, Tracklet.TRUNC_TRUNCATED):
+                        continue
+                    # re-create 3D bounding box in velodyne coordinate system
+                    yaw = rotation[2]  # other rotations are 0 in all xml files I checked
+                    assert np.abs(rotation[:2]).sum() == 0, 'object rotations other than yaw given!'
+                    rotMat = np.array([[np.cos(yaw), -np.sin(yaw), 0.0],
+                                       [np.sin(yaw), np.cos(yaw), 0.0],
+                                       [0.0, 0.0, 1.0]])
+                    bbox = np.dot(rotMat, bbox) + np.tile(translation, (8, 1))
+                    obj_ = ObjTuple(id, tracklet.objectType, bbox, translation, rotation, absoluteFrameNumber)
+                    if absoluteFrameNumber in objs_frame_wise.keys():
+                        objs_frame_wise[absoluteFrameNumber].append(obj_)
+                    else:
+                        objs_frame_wise[absoluteFrameNumber] = [obj_]
+        return objs_frame_wise
+
+
+if __name__ == '__main__':
+    base_path = '/media/jianyun/My Passport/KITTI_DATA/RawData/Data'
+    date = '2011_09_26'
+    drive = '0001'
+    test_raw = raw(base_path, date, drive)
+    test_raw.parseTrackletXml()

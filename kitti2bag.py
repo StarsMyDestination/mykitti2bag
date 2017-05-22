@@ -4,30 +4,31 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+# standard
 import sys
-
-try:
-    import pykitti
-except ImportError as e:
-    print('Could not load module \'pykitti\'. Please run `pip install pykitti`')
-    sys.exit(1)
-
-import tf
 import os
+import progressbar
+from datetime import datetime
+import numpy as np
+import argparse
+
+# own
+import pykitti
+
+# ros
+import tf
 import cv2
 import rospy
 import rosbag
-import progressbar
 from tf2_msgs.msg import TFMessage
-from datetime import datetime
 from std_msgs.msg import Header
 from sensor_msgs.msg import CameraInfo, Imu, PointField, NavSatFix
 import sensor_msgs.point_cloud2 as pcl2
 from geometry_msgs.msg import TransformStamped, TwistStamped, Transform
 from cv_bridge import CvBridge
-import numpy as np
-import argparse
 
+
+def save_tracklets_data(bag, tracklets_list)
 
 def save_imu_data(bag, kitti, imu_frame_id, topic):
     print("Exporting IMU")
@@ -406,4 +407,7 @@ def main():
 
 
 if __name__ == '__main__':
+    # test_cmd:
+    # python kitti2bag.py raw_synced '/media/jianyun/My Passport/KITTI_DATA/RawData/Data' -t 2011_09_26 -r 0001
+
     main()

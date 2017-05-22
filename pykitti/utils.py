@@ -13,27 +13,27 @@ def rotx(t):
     """Rotation about the x-axis."""
     c = np.cos(t)
     s = np.sin(t)
-    return np.array([[1,  0,  0],
-                     [0,  c, -s],
-                     [0,  s,  c]])
+    return np.array([[1, 0, 0],
+                     [0, c, -s],
+                     [0, s, c]])
 
 
 def roty(t):
     """Rotation about the y-axis."""
     c = np.cos(t)
     s = np.sin(t)
-    return np.array([[c,  0,  s],
-                     [0,  1,  0],
-                     [-s, 0,  c]])
+    return np.array([[c, 0, s],
+                     [0, 1, 0],
+                     [-s, 0, c]])
 
 
 def rotz(t):
     """Rotation about the z-axis."""
     c = np.cos(t)
     s = np.sin(t)
-    return np.array([[c, -s,  0],
-                     [s,  c,  0],
-                     [0,  0,  1]])
+    return np.array([[c, -s, 0],
+                     [s, c, 0],
+                     [0, 0, 1]])
 
 
 def transform_from_rot_trans(R, t):
@@ -68,7 +68,7 @@ def pose_from_oxts_packet(packet, scale):
     # Use a Mercator projection to get the translation vector
     tx = scale * packet.lon * np.pi * er / 180.
     ty = scale * er * \
-        np.log(np.tan((90. + packet.lat) * np.pi / 360.))
+         np.log(np.tan((90. + packet.lat) * np.pi / 360.))
     tz = packet.alt
     t = np.array([tx, ty, tz])
 
